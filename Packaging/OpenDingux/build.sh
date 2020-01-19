@@ -61,11 +61,22 @@ prepare_buildroot() {
 	git clone --depth=1 "${BUILDROOT_REPOS[$TARGET]}" "$BUILDROOT"
 }
 
+buildroot_libsodium_enable_static() {
+	if ! grep 'enable-static' package/libsodium/libsodium.mk > /dev/null; then
+		if [[ "$TARGET" == "rg350" ]]; then
+			echo 'LIBSODIUM_CONF_OPT += --enable-static' >> package/libsodium/libsodium.mk
+		else
+			echo 'LIBSODIUM_CONF_OPTS += --enable-static' >> package/libsodium/libsodium.mk
+		fi
+	fi
+}
+
 make_buildroot() {
 	cp "Packaging/OpenDingux/$BUILDROOT_DEFCONFIG" "$BUILDROOT/configs/"
 	cd "$BUILDROOT"
+	buildroot_libsodium_enable_static
 	make "$BUILDROOT_DEFCONFIG"
-	BR2_JLEVEL=0 make toolchain libzip sdl sdl_mixer sdl_ttf
+	BR2_JLEVEL=0 make toolchain libsodium libzip sdl sdl_mixer sdl_ttf
 	cd -
 }
 

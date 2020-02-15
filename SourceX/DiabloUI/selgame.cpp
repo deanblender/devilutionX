@@ -90,6 +90,10 @@ UiItem ENTERPASSWORD_DIALOG[] = {
 	SELGAME_CANCEL,
 };
 
+constexpr char kIniConnectionSection[] = "Phone Book";
+constexpr char kIniLastConnectionIp[] = "Entry1";
+constexpr char kIniLastConnectionPassword[] = "Password1";
+
 } // namespace
 
 void selgame_Free()
@@ -108,7 +112,11 @@ void selgame_GameSelection_Init()
 		return;
 	}
 
-	getIniValue("Phone Book", "Entry1", selgame_Ip, 128);
+	getIniValue(kIniConnectionSection, kIniLastConnectionIp, selgame_Ip, sizeof(selgame_Ip) - 1);
+#ifdef MULTIPLAYER_DEFAULT_IP
+	if (*selgame_Ip == '\0')
+		strncpy(selgame_Ip, MULTIPLAYER_DEFAULT_IP, sizeof(selgame_Ip) - 1);
+#endif
 	strcpy(title, "Client-Server (TCP)");
 	UiInitList(0, 1, selgame_GameSelection_Focus, selgame_GameSelection_Select, selgame_GameSelection_Esc, SELUDPGAME_DIALOG, size(SELUDPGAME_DIALOG));
 }
@@ -217,13 +225,19 @@ void selgame_Diff_Esc()
 void selgame_Password_Init(int value)
 {
 	memset(&selgame_Password, 0, sizeof(selgame_Password));
+	getIniValue(kIniConnectionSection, kIniLastConnectionPassword, selgame_Password, sizeof(selgame_Password) - 1);
+#ifdef MULTIPLAYER_DEFAULT_PASSWORD
+	if (*selgame_Password == '\0')
+		strncpy(selgame_Password, MULTIPLAYER_DEFAULT_PASSWORD, sizeof(selgame_Password) - 1);
+#endif
 	UiInitList(0, 0, NULL, selgame_Password_Select, selgame_Password_Esc, ENTERPASSWORD_DIALOG, size(ENTERPASSWORD_DIALOG));
 }
 
 void selgame_Password_Select(int value)
 {
 	if (selgame_selectedGame) {
-		setIniValue("Phone Book", "Entry1", selgame_Ip);
+		setIniValue(kIniConnectionSection, kIniLastConnectionIp, selgame_Ip);
+		setIniValue(kIniConnectionSection, kIniLastConnectionPassword, selgame_Password);
 		if (SNetJoinGame(selgame_selectedGame, selgame_Ip, selgame_Password, NULL, NULL, gdwPlayerId)) {
 			if (!IsDifficultyAllowed(m_client_info->initdata->bDiff)) {
 				selgame_GameSelection_Select(1);
